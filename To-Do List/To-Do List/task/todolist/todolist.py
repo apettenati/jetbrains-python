@@ -121,6 +121,4 @@ def delete_task(choice):
 
     print("The task has been deleted!")
 
-
-
 menu()
