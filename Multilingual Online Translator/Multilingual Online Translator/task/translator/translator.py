@@ -1,8 +1,13 @@
 import requests
 from bs4 import BeautifulSoup
 import logging
+import sys
 
-logger = logging.basicConfig(level=logging.INFO)
+
+# level = logging.INFO
+# format = '%(message)s'
+# handlers = [logging.FileHandler('filename.log'), logging.StreamHandler()]
+# logging.basicConfig(level=level, format=format, handlers=handlers)
 
 
 def get_URL(language_from, language_to, word):
@@ -19,6 +24,7 @@ def check_HTTP_status(r):
 
 def choose_language():
     language_dict = {
+        0: "all",
         1: "Arabic",
         2: "German",
         3: "English",
@@ -48,13 +54,14 @@ def choose_language():
           "12. Russian\n"
           "13. Turkish\n")
     language_from = int(input("Type the number of your language:\n"))
-    language_to = int(input("Type the number of language you want to translate to:\n"))
+    language_to = int(input("Type the number of language you want to translate to "
+                            "or '0' to translate all languages:\n"))
     return language_dict[language_from], language_dict[language_to]
 
 
 def chose_word_to_translate():
-    words = input('Type the word you want to translate:')
-    return words
+    word = input('Type the word you want to translate:')
+    return word
 
 
 def translate_words(r):
@@ -70,10 +77,13 @@ def translate_words(r):
     return translated_words[0:5]
 
 
-def print_translated_words(translated_words):
+def print_translated_words(language_to, translated_words):
+    all_translated_words = f'{language_to} Translations:\n'
+    # print(f"\n{language_to} Translations:")
     for word in translated_words:
-        print(word)
-
+        # print(word)
+        all_translated_words += f"{word}\n"
+    return all_translated_words
 
 def translate_sentences(r):
     soup = BeautifulSoup(r.content, 'html.parser')
@@ -88,33 +98,74 @@ def translate_sentences(r):
     return translated_sentences[0:10]
 
 
-def print_translated_sentences(translated_stentences):
+def print_translated_sentences(language_to, translated_sentences):
+    all_translated_sentences = f'{language_to} Examples: \n'
+    # print(f"\n{language_to} Examples:")
     tracker = False
-    for sentence in translated_stentences:
-        print(sentence)
+    for sentence in translated_sentences:
+        # print(sentence)
+        all_translated_sentences += f'{sentence}\n'
         if tracker:
-            print()
+            all_translated_sentences += '\n'
         tracker = not tracker
+    return all_translated_sentences
 
+
+def translate_all_languages(language_from, word):
+    language_dict = {
+        1: "Arabic",
+        2: "German",
+        3: "English",
+        4: "Spanish",
+        5: "French",
+        6: "Hebrew",
+        7: "Japanese",
+        8: "Dutch",
+        9: "Polish",
+        10: "Portuguese",
+        11: "Romanian",
+        12: "Russian",
+        13: "Turkish",
+    }
+    language_dict = {k: v for k, v in language_dict.items() if v != language_from}
+    for language_to in language_dict.values():
+        url = get_URL(language_from, language_to, word)
+        headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:82.0) Gecko/20100101 Firefox/82.0"}
+        r = requests.get(url, headers=headers)
+        # if check_HTTP_status(r):
+        translated_words = translate_words(r)
+        translated_sentences = translate_sentences(r)
+        write_translation(word, language_to, translated_words, translated_sentences)
+
+
+def write_translation(word, language_to, translated_words, translated_sentences):
+    all_translated_words = print_translated_words(language_to, translated_words)
+    all_translated_sentences = print_translated_sentences(language_to, translated_sentences)
+    print(all_translated_words)
+    print(all_translated_sentences)
+    with open(f"{word}.txt", "a", encoding="utf-8") as f:
+        # original_stdout = sys.stdout
+        # sys.stdout = f
+        print(all_translated_words, file=f)
+        print(all_translated_sentences, file=f)
+        # sys.stdout = original_stdout
 
 def main():
     language_from, language_to = choose_language()
     word = chose_word_to_translate()
-    # word = 'cheese'
-    url = get_URL(language_from, language_to, word)
+    # language_from, language_to, word = 'English', 0, 'cheese'
     headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:82.0) Gecko/20100101 Firefox/82.0"}
-    logging.debug(f"url: {url}")
-    r = requests.get(url, headers=headers)
 
-    if check_HTTP_status(r):
-        translated_words = translate_words(r)
-        translated_sentences = translate_sentences(r)
-        print(f"\n{language_to} Translations:")
-        print_translated_words(translated_words)
-        print(f"\n{language_to} Examples:")
-        print_translated_sentences(translated_sentences)
-        logging.debug(len(translated_words))
-
+    if language_to != "all":
+        url = get_URL(language_from, language_to, word)
+        r = requests.get(url, headers=headers)
+        if check_HTTP_status(r):
+            translated_words = translate_words(r)
+            translated_sentences = translate_sentences(r)
+            print_translated_words(language_to, translated_words)
+            print_translated_sentences(language_to, translated_sentences)
+    else:
+        translate_all_languages(language_from, word)
 
 if __name__ == "__main__":
     main()
