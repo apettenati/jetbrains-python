@@ -3,16 +3,13 @@ from bs4 import BeautifulSoup
 import logging
 import sys
 
-
-# level = logging.INFO
-# format = '%(message)s'
-# handlers = [logging.FileHandler('filename.log'), logging.StreamHandler()]
-# logging.basicConfig(level=level, format=format, handlers=handlers)
+logging.basicConfig(level=logging.DEBUG)
 
 
 def get_URL(language_from, language_to, word):
-    return f'https://context.reverso.net/translation/{language_from.lower()}-{language_to.lower()}/{word}'
-
+    url = f'https://context.reverso.net/translation/{language_from.lower()}-{language_to.lower()}/{word}'
+    logging.debug(f"url: {url}")
+    return url
 
 def check_HTTP_status(r):
     if r.status_code == 200:
@@ -79,9 +76,7 @@ def translate_words(r):
 
 def print_translated_words(language_to, translated_words):
     all_translated_words = f'{language_to} Translations:\n'
-    # print(f"\n{language_to} Translations:")
     for word in translated_words:
-        # print(word)
         all_translated_words += f"{word}\n"
     return all_translated_words
 
@@ -90,17 +85,16 @@ def translate_sentences(r):
     translations = soup \
         .find('section', id="examples-content") \
         .find_all('span', {"class": "text"})
-    logging.debug(translations)
+    # logging.debug(translations)
     translated_sentences = []
     for sentence in translations:
-        logging.debug(sentence.text)
+        # logging.debug(sentence.text)
         translated_sentences.append(sentence.text.replace('\n', '').strip())
     return translated_sentences[0:10]
 
 
 def print_translated_sentences(language_to, translated_sentences):
     all_translated_sentences = f'{language_to} Examples: \n'
-    # print(f"\n{language_to} Examples:")
     tracker = False
     for sentence in translated_sentences:
         # print(sentence)
@@ -127,12 +121,11 @@ def translate_all_languages(language_from, word):
         12: "Russian",
         13: "Turkish",
     }
-    language_dict = {k: v for k, v in language_dict.items() if v != language_from}
+    language_dict = {k: v for k, v in language_dict.items() if v.lower() != language_from}
     for language_to in language_dict.values():
         url = get_URL(language_from, language_to, word)
         headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:82.0) Gecko/20100101 Firefox/82.0"}
         r = requests.get(url, headers=headers)
-        # if check_HTTP_status(r):
         translated_words = translate_words(r)
         translated_sentences = translate_sentences(r)
         write_translation(word, language_to, translated_words, translated_sentences)
@@ -144,16 +137,17 @@ def write_translation(word, language_to, translated_words, translated_sentences)
     print(all_translated_words)
     print(all_translated_sentences)
     with open(f"{word}.txt", "a", encoding="utf-8") as f:
-        # original_stdout = sys.stdout
-        # sys.stdout = f
         print(all_translated_words, file=f)
         print(all_translated_sentences, file=f)
-        # sys.stdout = original_stdout
 
 def main():
-    language_from, language_to = choose_language()
-    word = chose_word_to_translate()
-    # language_from, language_to, word = 'English', 0, 'cheese'
+    # language_from, language_to = choose_language()
+    # word = chose_word_to_translate()
+    # language_from, language_to, word = 'English', 'all', 'cheese'
+    args = sys.argv
+    language_from = args[1]
+    language_to = args[2]
+    word = args[3]
     headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:82.0) Gecko/20100101 Firefox/82.0"}
 
     if language_to != "all":
