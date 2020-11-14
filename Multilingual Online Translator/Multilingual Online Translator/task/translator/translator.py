@@ -3,7 +3,7 @@ from bs4 import BeautifulSoup
 import logging
 
 
-logger = logging.basicConfig(level=logging.DEBUG)
+logger = logging.basicConfig(level=logging.INFO)
 
 
 def get_URL(language, word):
@@ -32,14 +32,19 @@ def chose_word_to_translate():
 
 def translate_words(r):
     soup = BeautifulSoup(r.content, 'html.parser')
-    # translations = soup.find_all('div', id="translations-content")
-    translations = soup.find_all('a', {"class": "translation"})
+    translations = soup\
+        .find('div', id="translations-content")\
+        .find_all('a', {"class": "translation"})
     # logging.debug(translations)
     translated_words = []
     for word in translations:
         # logging.debug(word)
         translated_words.append(word.text.replace('\n', '').strip())
-    return translated_words
+    return translated_words[0:5]
+
+def print_translated_words(translated_words):
+    for word in translated_words:
+        print(word)
 
 def translate_sentences(r):
     soup = BeautifulSoup(r.content, 'html.parser')
@@ -51,14 +56,23 @@ def translate_sentences(r):
     for sentence in translations:
         logging.debug(sentence.text)
         translated_sentences.append(sentence.text.replace('\n', '').strip())
-    return translated_sentences
+    return translated_sentences[0:10]
+
+def print_translated_sentences(translated_stentences):
+    tracker = False
+    for sentence in translated_stentences:
+        print(sentence)
+        if tracker:
+            print()
+        tracker = not tracker
 
 
 def main():
-    # language = choose_language()
-    # word = chose_word_to_translate()
-    language = 'fr'
-    word = 'cheese'
+    language_dict = {'fr':'French', 'en': 'English'}
+    language = choose_language()
+    word = chose_word_to_translate()
+    # language = 'fr'
+    # word = 'cheese'
     print(f'You chose "{language}" as the language to translate "{word}" to.')
     url = get_URL(language, word)
     headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:82.0) Gecko/20100101 Firefox/82.0"}
@@ -68,10 +82,12 @@ def main():
     if check_HTTP_status(r):
         translated_words = translate_words(r)
         translated_sentences = translate_sentences(r)
-        print(f"Translations \n"
-              f"{translated_words}\n"
-              f"{translated_sentences}"
-        )
+        print(f"\nContext Examples:\n"
+              f"\n{language_dict[language]} Translations:")
+
+        print_translated_words(translated_words)
+        print(f"\n{language_dict[language]} Examples:")
+        print_translated_sentences(translated_sentences)
         logging.debug(len(translated_words))
 
     else:
