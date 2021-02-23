@@ -1,6 +1,24 @@
 import sys
+from sqlalchemy import create_engine
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy import Column, Integer, String
+from sqlalchemy.orm import sessionmaker
 
-flashcards = []
+
+engine = create_engine('sqlite:///flashcard.db?check_same_thread=False')
+Base = declarative_base()
+
+
+class Flashcard(Base):
+    __tablename__ = 'flashcard'
+
+    id = Column(Integer, primary_key=True)
+    question = Column(String)
+    answer = Column(String)
+
+
+Base.metadata.create_all(engine)
+Session = sessionmaker(bind=engine)
 
 
 def main():
@@ -47,25 +65,28 @@ def new_flashcard():
             break
         else:
             print("the answer can't be empty!")
-    flashcards.append({question: answer})
+    flashcard = Flashcard(question=question, answer=answer)
+    session.add(flashcard)
+    session.commit()
 
 
 def practice_flashcards():
+    flashcards = session.query(Flashcard).all()
     if len(flashcards) == 0:
         print("There is no flashcard to practice!\n")
     for flashcard in flashcards:
-        for question, answer in flashcard.items():
-            print(f'Question: {question}')
-            choice = input('Please press "y" to see the answer or press "n" to skip:\n')
-            try:
-                if choice == "y":
-                    print(f'Answer: {answer}\n')
-                elif choice == "n":
-                    break
-            except ValueError:
-                print("Invalid choice\n")
+        print(f'Question: {flashcard.question}')
+        choice = input('Please press "y" to see the answer or press "n" to skip:\n')
+        try:
+            if choice == "y":
+                print(f'Answer: {flashcard.answer}\n')
+            elif choice == "n":
+                break
+        except ValueError:
+            print("Invalid choice\n")
     main()
 
 
 if __name__ == "__main__":
+    session = Session()
     main()
