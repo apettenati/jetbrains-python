@@ -76,15 +76,41 @@ def practice_flashcards():
         print("There is no flashcard to practice!\n")
     for flashcard in flashcards:
         print(f'Question: {flashcard.question}')
-        choice = input('Please press "y" to see the answer or press "n" to skip:\n')
+        choice = input('press "y" to see the answer:\npress "n" to skip:\npress "u" to update:')
         try:
             if choice == "y":
                 print(f'Answer: {flashcard.answer}\n')
             elif choice == "n":
                 break
+            elif choice == "u":
+                update_menu(flashcard)
         except ValueError:
             print("Invalid choice\n")
     main()
+
+
+def update_menu(flashcard):
+    choice = input('press "d" to delete the flashcard:\npress "e" to edit the flashcard:')
+    try:
+        if choice == "d":
+            delete_flashcard(flashcard)
+        elif choice == "e":
+            edit_flashcard(flashcard)
+    except ValueError:
+        print("Invalid choice\n")
+
+
+def delete_flashcard(flashcard):
+    session.delete(flashcard)
+    session.commit()
+
+
+def edit_flashcard(flashcard):
+    print(f'current question: {flashcard.question}')
+    flashcard.question = input("please write a new question:\n")
+    print(f'current answer: {flashcard.answer}')
+    flashcard.answer = input("please write a new answer:\n")
+    session.commit()
 
 
 if __name__ == "__main__":
